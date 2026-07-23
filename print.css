@@ -1,0 +1,192 @@
+/* =============================================================================
+   print.css — ballot-card print stylesheet (§9.1)
+   -----------------------------------------------------------------------------
+   Loaded via <link rel="stylesheet" href="print.css" media="print"> AFTER
+   styles.css, so its rules win the cascade when (and only when) printing.
+
+   Even though the <link media="print"> already scopes this file to print, the
+   whole file is ALSO wrapped in `@media print`. That is deliberate: it makes the
+   file self-contained and portable — if someone later inlines it, drops the
+   media attribute, or reorders the <link>s, the print scoping still holds.
+
+   Strategy (why this file is short):
+     1. Override the DESIGN TOKENS to a black-on-white print palette. Because
+        every component in styles.css references tokens (never raw colors), the
+        entire ballot card re-colors itself for print with no per-component work.
+     2. Hide the app chrome (header, nav, buttons, footer) — export is the card
+        alone (§9.1).
+     3. Add print-only concerns tokens can't express: @page margins, physical
+        type sizes, page-break control, and QR sizing.
+
+   Constraints honored (§9.1):
+     - No fixed positioning and NO viewport units (vw/vh) anywhere below. Physical
+       units (cm/mm/pt) are used instead — mobile print engines choke on vw/vh.
+     - Choice state prints as TEXT ("YES"/"NO"/"UNDECIDED"), never color alone
+       (§12), so the card is fully legible in grayscale.
+   ========================================================================== */
+
+@media print {
+
+  /* ==========================================================================
+     1. PRINT TOKEN OVERRIDES — the single seam for print theming
+     Flip the palette to ink-on-paper. Everything in styles.css that reads a
+     token inherits this automatically. Edit HERE to retune print, not below.
+     ======================================================================== */
+  :root {
+    --color-bg:          #fff;
+    --color-surface:     #fff;
+    --color-border:      #000;   /* hairlines print as crisp black rules */
+    --color-text:        #000;
+    --color-text-muted:  #000;   /* muted grays vanish on paper; force black */
+
+    /* Accents collapse to ink — no colored fills, no wasted toner. */
+    --color-accent:      #000;
+    --color-accent-ink:  #000;
+    --color-accent-weak: #fff;
+
+    /* Choice colors collapse to black: the WORD carries the meaning (§12), so
+       grayscale/mono printers lose nothing. */
+    --color-choice-yes:        #000;
+    --color-choice-no:         #000;
+    --color-choice-undecided:  #000;
+
+    /* Notice/warn tints → ink. The inversion note stays black + bold. */
+    --color-notice-bg:   #fff;  --color-notice-ink:  #000;
+    --color-warn-bg:     #fff;  --color-warn-ink:    #000;
+
+    --shadow-card: none;        /* box-shadows don't print; drop it explicitly */
+  }
+
+  /* ==========================================================================
+     2. PAGE BOX & BASE
+     ======================================================================== */
+  @page {
+    /* Physical margins keep the card off the paper edge on every printer.
+       `portrait` matches the single-column card; the card is designed to fit
+       one page at these sizes. */
+    size: portrait;
+    margin: 1.5cm;
+  }
+
+  html, body {
+    background: #fff;
+    color: #000;
+    font-size: 12pt;            /* large, legible base; children scale from here */
+    line-height: 1.35;          /* tighter than screen to help fit one page */
+  }
+
+  /* Full-bleed content column: the @page margin (above) is the only inset. */
+  .main {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ==========================================================================
+     3. HIDE APP CHROME — the card is the product, everything else is UI
+     `!important` guarantees we beat any [hidden]/display rules from styles.css.
+     ======================================================================== */
+  .skip-link,
+  .site-header,
+  .app-status,
+  .site-footer,
+  .noscript-msg,
+  .view--summary .back,          /* "Back to all questions" link */
+  .ballot-card__actions,         /* Print / Copy buttons */
+  [data-action="review-undecided"] {
+    display: none !important;
+  }
+
+  /* Any view that isn't the ballot card is already [hidden] by app.js at print
+     time; this is a belt-and-suspenders guard if someone prints mid-flow. */
+  .view--overview,
+  .view--question {
+    display: none !important;
+  }
+
+  /* ==========================================================================
+     4. THE BALLOT CARD
+     ======================================================================== */
+  .ballot-card {
+    border: none;                /* @page provides the frame; no boxed border */
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .ballot-card__head {
+    border-bottom: 1.5pt solid #000;
+    padding-bottom: 6pt;
+    /* Keep the header glued to the first row — never orphan the title. */
+    break-after: avoid-page;
+  }
+  .ballot-card__head h1  { font-size: 20pt; margin: 0; }
+  .ballot-card__date     { font-size: 10pt; margin: 2pt 0 0; }
+  .ballot-card__sub      { font-size: 10pt; margin: 0; }
+
+  /* --- Rows --- */
+  .ballot-card__rows { margin: 8pt 0; }
+
+  .ballot-row {
+    padding: 6pt 0;
+    border-bottom: 0.5pt solid #000;
+    /* A row (with its note/inversion line) must never split across pages. */
+    break-inside: avoid;
+    page-break-inside: avoid;    /* legacy alias for older print engines */
+  }
+  .ballot-row__num    { font-weight: 700; }
+  .ballot-row__title  { font-size: 12pt; }
+  .ballot-row__choice { font-size: 12pt; font-weight: 700; }  /* the answer, loud */
+  .ballot-row__note   { font-size: 9.5pt; }
+  .ballot-row__inversion {
+    font-size: 9.5pt;
+    font-weight: 700;            /* the firearms yes/no warning survives to paper (§8.3) */
+  }
+
+  /* Keep the "still undecided" line with the QR block, not stranded alone. */
+  .ballot-card__status { font-size: 10pt; break-inside: avoid; }
+
+  /* ==========================================================================
+     5. QR CODE (§9.4)
+     Must print as solid black modules and be large enough to scan (≥2cm spec;
+     we use 3cm for reliability). print-color-adjust stops "economy"/grayscale
+     modes from lightening the modules into an unscannable smear.
+     ======================================================================== */
+  .ballot-card__qr {
+    background: #fff;
+    padding: 0;
+    margin-top: 8pt;
+    break-inside: avoid;         /* label + code stay together */
+    -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+  }
+  .qr {
+    width: 3cm;
+    height: 3cm;
+    border: 0.5pt solid #000;
+    -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+  }
+  /* The vendored lib renders a canvas/img/svg; make it fill the 3cm box.
+     QR is square, so uniform scaling won't distort it. */
+  .qr canvas,
+  .qr img,
+  .qr svg {
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+  }
+  .qr__label { font-size: 9pt; }
+
+  /* ==========================================================================
+     6. FOOTER (attribution + "not an official ballot")
+     ======================================================================== */
+  .ballot-card__foot {
+    margin-top: 8pt;
+    padding-top: 6pt;
+    border-top: 0.5pt solid #000;
+    font-size: 9pt;
+    break-inside: avoid;
+  }
+}

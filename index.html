@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!--
+    Content-Security-Policy as a <meta> tag (§13): GitHub Pages allows no custom
+    HTTP headers, so we enforce "zero external requests" here in the markup.
+    - default-src 'self'  → all code/content/fetches must be same-origin
+    - img-src 'self' data: → QR code may render to a data: URI
+    - No 'unsafe-inline' anywhere: there are no inline <script>/<style> blocks or
+      style="" attributes. app.js toggles classes and the [hidden] attribute
+      instead, so this stays strict. This makes constraint #3 mechanically
+      enforced by the browser, not merely promised.
+  -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'" />
+
+  <title>Massachusetts 2026 Ballot Question Guide — cSPA</title>
+  <meta name="description"
+        content="A nonpartisan interactive guide to the Massachusetts 2026 statewide ballot questions." />
+
+  <!-- Screen styles (token layer lives in styles.css :root, §12). -->
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Ballot-card print stylesheet, scoped to print only (§9.1). -->
+  <link rel="stylesheet" href="print.css" media="print" />
+
+  <!--
+    Fonts: system font stacks only (see --font-* tokens in styles.css). No font
+    CDN and no self-hosted @font-face — either would add a network request and
+    break the CSP above (constraint #3). Type can be revised entirely via tokens.
+  -->
+
+  <!--
+    Scripts: both deferred so they run after parse, in source order.
+    Vendored QR generator (§3 file layout) loads first; app.js may use it.
+  -->
+  <script src="qrcode.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <!-- Skip link: first focusable element, for keyboard/AT users (§12). -->
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- ===================== PERSISTENT HEADER (banner) ===================== -->
+  <header class="site-header" role="banner">
+    <a class="site-header__brand" href="#" data-nav="overview">
+      <span class="site-header__title">MA 2026 Ballot Guide</span>
+      <span class="site-header__org">Center for State Policy Analysis</span>
+    </a>
+
+    <!--
+      Persistent Summary link with live progress (§7, §10). The card is
+      reachable at all times — we never trap work behind "finish first."
+      Progress text here updates silently; the aria-live announcement is on the
+      Overview counter (below) to avoid double-announcing the same number.
+    -->
+    <nav class="site-header__nav" aria-label="Primary">
+      <a class="site-header__summary-link" href="#" data-nav="summary">
+        Summary <span class="site-header__progress" data-field="progress-short">(0/0)</span>
+      </a>
+    </nav>
+  </header>
+
+  <!--
+    Global status region for load/errors (announced politely). app.js writes
+    "Loading questions…" here and swaps in an error message if the fetch fails.
+  -->
+  <div id="app-status" class="app-status" role="status" aria-live="polite" hidden></div>
+
+  <main id="main" class="main" tabindex="-1">
+
+    <!-- ============================ OVERVIEW ============================ -->
+    <!-- Home view: checklist of all N questions + progress + privacy note. -->
+    <section class="view view--overview" data-view="overview" aria-labelledby="overview-h1" hidden>
+      <h1 id="overview-h1" tabindex="-1">Massachusetts 2026 statewide ballot questions</h1>
+
+      <!-- meta.draft banner: shown only when questions.json flags draft content. -->
+      <p class="banner banner--draft" data-flag="draft" hidden>
+        Draft content — figures and summaries are placeholders pending final cSPA review.
+      </p>
+
+      <!-- Shown only if meta.ballotOrderCertified is false (§4). No fake numbers. -->
+      <p class="banner banner--notice" data-flag="order-uncertified" hidden>
+        The official ballot order is not yet final. Questions below are shown
+        without numbers until the Secretary of the Commonwealth certifies them.
+      </p>
+
+      <!-- Progress line. This is the primary aria-live counter (§12). -->
+      <p class="progress" data-field="progress-long" aria-live="polite">
+        You've decided 0 of 0 questions.
+      </p>
+
+      <p>
+        <button type="button" class="btn btn--primary" data-action="start">
+          Start with the first question
+        </button>
+      </p>
+
+      <!-- app.js populates from questions.json using #tpl-overview-item. -->
+      <ol class="overview-list" data-field="overview-list" aria-label="All ballot questions"></ol>
+
+      <!-- Privacy statement: appears once, plainly (§10). Copy is editable here. -->
+      <aside class="privacy" aria-labelledby="privacy-h">
+        <h2 id="privacy-h">Your privacy</h2>
+        <p>
+          Nothing you enter here is collected, stored, or sent anywhere — not to
+          cSPA, not to anyone. There are no accounts, no cookies, and no analytics.
+        </p>
+        <p>
+          So we can restore your choices if the page reloads, they're encoded in
+          this page's web address, which stays on your device (your browser may
+          keep it in your history, like any address). Your notes live only on this
+          screen: print or copy your card before you leave.
+        </p>
+      </aside>
+    </section>
+
+    <!-- ============================ QUESTION ============================ -->
+    <!--
+      Single-question view. This skeleton is static; app.js fills every
+      [data-field] and toggles the conditional regions per the current question.
+    -->
+    <section class="view view--question" data-view="question" aria-labelledby="question-h1" hidden>
+      <p class="back">
+        <a href="#" data-nav="overview">&larr; All questions</a>
+      </p>
+
+      <p class="eyebrow" data-field="eyebrow"><!-- "Question 9 · Veto referendum" --></p>
+      <h1 id="question-h1" tabindex="-1" data-field="title"><!-- short title --></h1>
+
+      <!-- Inversion callout (§8.3). Hidden unless the question has inverted:true. -->
+      <aside class="callout callout--inversion" data-field="inversion" role="note" hidden>
+        <!-- app.js fills heading + body from data; kept out of HTML so it's
+             a general mechanism, not a firearms special case. -->
+      </aside>
+
+      <!-- A YES/NO means: present for every question (§8.1). -->
+      <dl class="means">
+        <div class="means__row">
+          <dt>A <strong>YES</strong> vote means</dt>
+          <dd data-field="yesMeans"></dd>
+        </div>
+        <div class="means__row">
+          <dt>A <strong>NO</strong> vote means</dt>
+          <dd data-field="noMeans"></dd>
+        </div>
+      </dl>
+
+      <!-- Executive summary: default reading layer (§8). Paragraphs injected. -->
+      <div class="summary" data-field="summary"></div>
+
+      <!-- Fiscal one-liner; hidden when fiscal is null. -->
+      <p class="fiscal" data-field="fiscal" hidden></p>
+
+      <!-- Full cSPA guide: opt-in, expanded in place (§8). app.js builds the
+           typed blocks (h2/p/ul/ol/table) into the container. -->
+      <details class="full-guide">
+        <summary>Read the full cSPA guide</summary>
+        <div class="full-guide__body" data-field="guide"></div>
+      </details>
+
+      <!-- Who supports / opposes: two named lists (§8.2). -->
+      <div class="stances">
+        <div class="stances__col">
+          <h2>Who supports</h2>
+          <ul data-field="support"></ul>
+        </div>
+        <div class="stances__col">
+          <h2>Who opposes</h2>
+          <ul data-field="oppose"></ul>
+        </div>
+      </div>
+
+      <!-- Dig-deeper: 0–3 optional collapsibles; app.js appends <details> here. -->
+      <div class="deeper" data-field="deeper"></div>
+
+      <!-- Choice + note. fieldset/legend group per §12; buttons are toggles
+           carrying state via aria-pressed (never color alone). -->
+      <form class="decide" aria-label="Record your choice">
+        <fieldset class="decide__choices">
+          <legend>My choice</legend>
+          <button type="button" class="choice-btn" data-choice="yes" aria-pressed="false">Yes</button>
+          <button type="button" class="choice-btn" data-choice="no" aria-pressed="false">No</button>
+          <button type="button" class="choice-btn" data-choice="undecided" aria-pressed="false">Undecided</button>
+        </fieldset>
+
+        <div class="decide__note">
+          <label for="note-input">My note (optional)</label>
+          <textarea id="note-input" data-field="note" maxlength="200"
+                    rows="2" aria-describedby="note-hint"></textarea>
+          <p id="note-hint" class="hint">
+            Notes aren't saved if the page reloads — print or copy your card to keep them.
+          </p>
+        </div>
+      </form>
+
+      <!-- Prev/Next. app.js sets labels/hrefs and disables at the ends. -->
+      <nav class="qnav" aria-label="Question navigation">
+        <a class="btn qnav__prev" data-field="prev" href="#">&larr; Previous</a>
+        <a class="btn qnav__next" data-field="next" href="#">Next &rarr;</a>
+      </nav>
+    </section>
+
+    <!-- ======================= SUMMARY / BALLOT CARD ======================= -->
+    <section class="view view--summary" data-view="summary" aria-labelledby="summary-h1" hidden>
+      <div class="ballot-card" data-field="ballot-card">
+        <header class="ballot-card__head">
+          <h1 id="summary-h1" tabindex="-1">My ballot card</h1>
+          <p class="ballot-card__date" data-field="election-date"></p>
+          <p class="ballot-card__sub">Massachusetts statewide questions</p>
+        </header>
+
+        <!-- Rows built from #tpl-ballot-row. -->
+        <ol class="ballot-card__rows" data-field="ballot-rows"></ol>
+
+        <div class="ballot-card__status">
+          <p data-field="undecided-line" aria-live="polite"></p>
+          <button type="button" class="btn" data-action="review-undecided" hidden>
+            Review my undecided questions
+          </button>
+        </div>
+
+        <!-- Export paths (§9). Copy fallback UI is created by app.js on failure. -->
+        <div class="ballot-card__actions">
+          <button type="button" class="btn" data-action="print">Print my ballot card</button>
+          <button type="button" class="btn" data-action="copy">Copy as text</button>
+        </div>
+
+        <div class="ballot-card__qr">
+          <div class="qr" data-field="qr" aria-hidden="true"></div>
+          <p class="qr__label">Scan to reopen your choices (notes are not included).</p>
+        </div>
+
+        <footer class="ballot-card__foot">
+          <p data-field="disclaimer"></p>
+          <p>This card is not an official ballot.</p>
+        </footer>
+      </div>
+
+      <p class="back">
+        <a href="#" data-nav="overview">&larr; Back to all questions</a>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <p>Summaries by the Center for State Policy Analysis, Tisch College, Tufts University.</p>
+  </footer>
+
+  <!-- Fallback for the (rare) no-JavaScript case. -->
+  <noscript>
+    <p class="noscript-msg">
+      This guide needs JavaScript to display the ballot questions. Please enable
+      JavaScript, or contact cSPA for a text version.
+    </p>
+  </noscript>
+
+  <!-- ===========================================================
+       TEMPLATES — cloned by app.js. Keeping repeated markup here
+       (rather than as JS strings) makes it editable by non-JS folks
+       and avoids innerHTML/XSS. Elements are addressed by [data-field].
+       =========================================================== -->
+
+  <!-- One row in the Overview checklist. -->
+  <template id="tpl-overview-item">
+    <li class="overview-item">
+      <a class="overview-item__link" href="#">
+        <span class="overview-item__eyebrow" data-field="eyebrow"></span>
+        <span class="overview-item__title" data-field="title"></span>
+      </a>
+      <span class="chip" data-field="status"></span>
+    </li>
+  </template>
+
+  <!-- One row on the ballot card. -->
+  <template id="tpl-ballot-row">
+    <li class="ballot-row">
+      <span class="ballot-row__num" data-field="num"></span>
+      <span class="ballot-row__title" data-field="title"></span>
+      <span class="ballot-row__choice" data-field="choice"></span>
+      <p class="ballot-row__note" data-field="note" hidden></p>
+      <p class="ballot-row__inversion" data-field="inversion" hidden></p>
+    </li>
+  </template>
+
+  <!-- One dig-deeper collapsible in the question view. -->
+  <template id="tpl-deeper-item">
+    <details class="deeper__item">
+      <summary data-field="heading"></summary>
+      <div class="deeper__body" data-field="body"></div>
+    </details>
+  </template>
+
+</body>
+</html>

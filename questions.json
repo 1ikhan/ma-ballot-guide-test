@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "electionDate": "2026-11-03",
+    "contentRevised": "2026-07-16",
+    "ballotOrderCertified": true,
+    "fragmentSchemaVersion": 1,
+    "draft": true,
+    "disclaimer": "The Center for State Policy Analysis is nonpartisan and takes no position on any ballot question."
+  },
+  "questions": [
+    {
+      "id": "tax-cap-62f",
+      "ballotNumber": 1,
+      "type": "initiative-petition",
+      "shortTitle": "62F Tax Cap Reform",
+      "officialTitle": "A law revising the Chapter 62F tax-revenue cap and refund formula",
+      "summary": [
+        "Chapter 62F, a 1986 law, returns money to taxpayers when state tax collections grow faster than wages and salaries. This measure would rebase that cap to the prior year's actual collections (grown by a three-year average of wage and salary growth) and fold in revenue from the millionaire surtax.",
+        "Supporters say the change makes refunds more frequent and larger and keeps government growth in check. Opponents group it with other anti-tax measures and warn it could constrain the state's ability to rebuild reserves after a downturn."
+      ],
+      "yesMeans": "Changes the Chapter 62F formula so tax-cap refunds are triggered more often and are larger.",
+      "noMeans": "Keeps the current 1986 Chapter 62F refund formula unchanged.",
+      "inverted": false,
+      "fiscal": "Analysts estimate the revised cap could have triggered several times in the past decade, redirecting billions of dollars to refunds.",
+      "support": ["Taxpayers for an Affordable Massachusetts", "Massachusetts Fiscal Alliance"],
+      "oppose": ["Raise Up Massachusetts (aligned)"],
+      "fullGuide": [
+        { "type": "h2", "text": "Background" },
+        { "type": "p", "text": "Chapter 62F caps how much tax revenue the state may keep in a year. When collections exceed the cap, the excess is returned to taxpayers in proportion to what they paid. The cap last triggered a large refund in 2022." },
+        { "type": "h2", "text": "What would change" },
+        { "type": "ul", "items": [
+          "The cap would be rebased to the prior year's actual collections rather than a 1986 baseline.",
+          "Growth would be indexed to a three-year average of wage and salary growth.",
+          "Revenue from the millionaire surtax would be counted toward the cap."
+        ] },
+        { "type": "h2", "text": "Points of contention" },
+        { "type": "table", "headers": ["Concern", "Detail"], "rows": [
+          ["Recovery constraint", "In strong post-recession recovery years, the revised cap could hold collections below actual need."],
+          ["Comprehension", "The formula is technical, which is itself a liability for informed voting."]
+        ] }
+      ],
+      "deeper": [],
+      "lastVerified": "2026-07-16"
+    },
+    {
+      "id": "nature-fund",
+      "ballotNumber": 2,
+      "type": "initiative-petition",
+      "shortTitle": "Nature Fund",
+      "officialTitle": "An initiative to protect water and nature by dedicating existing sales-tax revenue",
+      "summary": [
+        "This measure would dedicate the existing state sales tax collected on sporting goods, recreational vehicles, and golf courses to a new 'Nature for All Fund' — 50% at first, rising to 100% after July 1, 2028 — overseen by a 15-member board.",
+        "Because a ballot measure cannot itself appropriate money, the fund would remain subject to legislative appropriation. Supporters describe roughly $100 million per year 'without raising taxes'; critics note the Legislature could still fund it at zero."
+      ],
+      "yesMeans": "Dedicates existing sales-tax revenue from sporting goods and recreation to a conservation fund.",
+      "noMeans": "Leaves that sales-tax revenue in the state's general fund.",
+      "inverted": false,
+      "fiscal": "Coalition estimates about $100 million per year; the amount remains subject to legislative appropriation.",
+      "support": ["Nature for Massachusetts coalition", "Mass Audubon"],
+      "oppose": [],
+      "fullGuide": [
+        { "type": "h2", "text": "How the fund would work" },
+        { "type": "p", "text": "The measure directs a share of an existing tax stream into a dedicated fund rather than creating a new tax. The share rises from half to all of the relevant revenue after mid-2028." },
+        { "type": "h2", "text": "The appropriation question" },
+        { "type": "p", "text": "A frequently raised point during committee hearings is that the fund is 'subject to appropriation,' meaning its practical effect depends on future legislative budgets." }
+      ],
+      "deeper": [],
+      "lastVerified": "2026-07-16"
+    },
+    {
+      "id": "starter-homes",
+      "ballotNumber": 3,
+      "type": "initiative-petition",
+      "shortTitle": "Starter Homes",
+      "officialTitle": "An initiative to allow single-family homes by right on small lots",
+      "summary": [
+        "This measure would let single-family homes be built by right in any residentially zoned area on lots of at least 5,000 square feet with at least 50 feet of frontage and access to public water and sewer, overriding larger local minimum-lot requirements.",
+        "Supporters frame it as a housing-supply reform. Opponents cite local-control and infrastructure concerns, and note the measure sets a minimum lot size but places no cap on home size."
+      ],
+      "yesMeans": "Allows single-family homes by right on small lots statewide where public water and sewer exist.",
+      "noMeans": "Keeps existing local minimum-lot-size zoning rules.",
+      "inverted": false,
+      "fiscal": null,
+      "support": ["Legalize Starter Homes", "Abundant Housing Massachusetts"],
+      "oppose": ["Massachusetts Municipal Association"],
+      "fullGuide": [
+        { "type": "h2", "text": "What 'by right' means" },
+        { "type": "p", "text": "'By right' development can proceed without discretionary local permitting, so long as it meets the stated criteria." },
+        { "type": "h2", "text": "Open drafting questions" },
+        { "type": "ul", "items": [
+          "The measure limits lot size but not home size.",
+          "The meaning of 'public water and sewer' access is not precisely defined."
+        ] }
+      ],
+      "deeper": [],
+      "lastVerified": "2026-07-16"
+    },
+    {
+      "id": "all-party-primary",
+      "ballotNumber": 4,
+      "type": "initiative-petition",
+      "shortTitle": "All-Party Primary",
+      "officialTitle": "An initiative to establish a single all-candidate primary (top-two)",
+      "summary": [
+        "This measure would replace separate party primaries for state, county, and congressional offices with a single all-candidate preliminary; the top two finishers advance to the general election. Presidential primaries and city elections are excluded.",
+        "Supporters argue it broadens choice and reduces polarization. Opponents, including both major state parties, question the evidence and note the potential for higher administrative costs."
+      ],
+      "yesMeans": "Replaces separate party primaries with one all-candidate primary; the top two advance.",
+      "noMeans": "Keeps the current party-primary system.",
+      "inverted": false,
+      "fiscal": "Election administration costs would likely rise.",
+      "support": ["Coalition for Healthy Democracy"],
+      "oppose": ["Massachusetts Democratic State Committee", "MassGOP"],
+      "fullGuide": [
+        { "type": "h2", "text": "How top-two works" },
+        { "type": "p", "text": "All candidates for an office appear on one preliminary ballot regardless of party. The two candidates with the most votes advance, which can mean two candidates of the same party in the general election." }
+      ],
+      "deeper": [],
+      "lastVerified": "2026-07-16"
+    }
+  ]
+}

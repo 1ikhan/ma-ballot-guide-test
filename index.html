@@ -10,9 +10,9 @@
     - default-src 'self'  → all code/content/fetches must be same-origin
     - img-src 'self' data: → QR code may render to a data: URI
     - No 'unsafe-inline' anywhere: there are no inline <script>/<style> blocks or
-      style="" attributes. app.js toggles classes and the [hidden] attribute
-      instead, so this stays strict. This makes constraint #3 mechanically
-      enforced by the browser, not merely promised.
+      style="" attributes. app.js toggles classes, the [hidden] attribute, and a
+      single data-accent hook (read by CSS) — never element.style — so this stays
+      strict. Constraint #3 is enforced by the browser, not merely promised.
   -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'" />
@@ -93,6 +93,11 @@
         You've decided 0 of 0 questions.
       </p>
 
+      <!-- Clickable progress bar (§7): one segment per question, colored by
+           decision status, each linking straight to that question. app.js
+           builds it from questions.json, so it scales to any count. -->
+      <nav class="progress-bar" data-field="progress-bar" aria-label="Question progress"></nav>
+
       <p>
         <button type="button" class="btn btn--primary" data-action="start">
           Start with the first question
@@ -121,12 +126,17 @@
     <!-- ============================ QUESTION ============================ -->
     <!--
       Single-question view. This skeleton is static; app.js fills every
-      [data-field] and toggles the conditional regions per the current question.
+      [data-field] and toggles the conditional regions per the current question,
+      and sets data-accent on the section for the eyebrow's identity color.
     -->
     <section class="view view--question" data-view="question" aria-labelledby="question-h1" hidden>
       <p class="back">
         <a href="#" data-nav="overview">&larr; All questions</a>
       </p>
+
+      <!-- Same clickable progress bar, so voters can jump between questions
+           while reading; the current one is marked with aria-current. -->
+      <nav class="progress-bar" data-field="progress-bar" aria-label="Question progress"></nav>
 
       <p class="eyebrow" data-field="eyebrow"><!-- "Question 9 · Veto referendum" --></p>
       <h1 id="question-h1" tabindex="-1" data-field="title"><!-- short title --></h1>
@@ -197,7 +207,8 @@
         </div>
       </form>
 
-      <!-- Prev/Next. app.js sets labels/hrefs and disables at the ends. -->
+      <!-- Prev/Next. app.js sets labels/hrefs; the ends route to Overview and
+           Summary rather than disabling. -->
       <nav class="qnav" aria-label="Question navigation">
         <a class="btn qnav__prev" data-field="prev" href="#">&larr; Previous</a>
         <a class="btn qnav__next" data-field="next" href="#">Next &rarr;</a>

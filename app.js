@@ -8,11 +8,13 @@
 
    Design rules honored throughout:
      - Data, not structure: the count, order, and every string come from JSON.
-       Nothing here assumes "nine" (§3).
+       Nothing here assumes "nine" (§3). The identity-color palette and progress
+       bar both scale to whatever questions.json contains.
      - No innerHTML for content: DOM is built with createElement + textContent
        and cloned <template>s, so JSON content can't inject markup (§4).
-     - No inline styles: we toggle classes and the [hidden] attribute only, so
-       the strict `default-src 'self'` CSP stays valid (constraint #3, §13).
+     - No inline styles: we toggle classes and the [hidden] attribute only, plus
+       one data-* attribute (data-accent) that CSS reads — never element.style —
+       so the strict `default-src 'self'` CSP stays valid (constraint #3, §13).
      - Choices live in the hash; notes never do (length + privacy, §6).
      - The hash is a MIRROR, not the source of truth during a session: we decode
        it once at load, then keep in-memory `ballot` authoritative. This is what
@@ -43,6 +45,11 @@
     'August', 'September', 'October', 'November', 'December'];
 
   var APP_TITLE = 'MA 2026 Ballot Guide';
+
+  // Identity-color palette size. Must match the count of --q-accent-* tokens in
+  // styles.css (nine). Questions cycle through these by position unless a
+  // question supplies its own `accent` field in questions.json.
+  var ACCENT_COUNT = 9;
 
   // Authoritative session state.
   var meta = {};                 // questions.json → meta
@@ -212,7 +219,8 @@
   }
 
   function showView(view, qid, focus) {
-    if (view === 'overview') reviewMode = false; // leaving the review flow
+    // Leaving the flow for Overview or Summary ends the review-undecideds filter.
+    if (view === 'overview' || view === 'summary') reviewMode = false;
 
     qsa('[data-view]').forEach(function (v) {
       v.hidden = (v.dataset.view !== view);
@@ -254,8 +262,9 @@
     var list = qf(document, 'overview-list');
     list.textContent = '';
 
-    questions.forEach(function (q) {
+    questions.forEach(function (q, i) {
       var node = templateRoot('tpl-overview-item').cloneNode(true);
+      node.dataset.accent = String(accentFor(q, i)); // identity color hook (CSS → --q-color)
       var link = node.querySelector('.overview-item__link');
       link.dataset.nav = 'question';
       link.dataset.qid = q.id;
@@ -266,6 +275,7 @@
     });
 
     updateProgress();
+    renderProgressBar(qf(viewByName('overview'), 'progress-bar'), null);
   }
 
   /* ===========================================================================
@@ -343,6 +353,9 @@
     if (!q) { navigate('overview'); return; }
     var V = viewByName('question');
 
+    // Identity color for the eyebrow banner; CSS resolves data-accent → --q-color.
+    V.dataset.accent = String(accentFor(q, questions.indexOf(q)));
+
     qf(V, 'eyebrow').textContent = eyebrowFor(q);
     qf(V, 'title').textContent = q.shortTitle;
 
@@ -376,6 +389,7 @@
     qf(V, 'note').value = ballot[id].note || '';
     renderChoiceButtons(id);
     renderQuestionNav(V, id);
+    renderProgressBar(qf(V, 'progress-bar'), id);
   }
 
   function renderChoiceButtons(id) {
@@ -388,25 +402,30 @@
 
   function renderQuestionNav(V, id) {
     var n = neighbors(id);
-    setNavLink(qf(V, 'prev'), n.prev, 'prev');
-    setNavLink(qf(V, 'next'), n.next, 'next');
+    // Prev: previous question, or back to the Overview at the very start.
+    if (n.prev) setNavLink(qf(V, 'prev'), n.prev, 'prev');
+    else        setNavToView(qf(V, 'prev'), 'overview', '← All questions');
+    // Next: next question, or on to the ballot card (Summary) at the very end —
+    // never a dead-ended, grayed-out button.
+    if (n.next) setNavLink(qf(V, 'next'), n.next, 'next');
+    else        setNavToView(qf(V, 'next'), 'summary', 'Review ballot card →');
   }
 
   function setNavLink(a, q, dir) {
-    if (q) {
-      a.dataset.nav = 'question';
-      a.dataset.qid = q.id;
-      a.setAttribute('aria-disabled', 'false');
-      a.textContent = (dir === 'prev' ? '← Previous: ' : 'Next: ') + q.shortTitle +
-        (dir === 'next' ? ' →' : '');
-    } else {
-      // No target: strip data-nav so clicks don't route; CSS pointer-events:none
-      // (via aria-disabled) also blocks activation.
-      a.removeAttribute('data-nav');
-      a.removeAttribute('data-qid');
-      a.setAttribute('aria-disabled', 'true');
-      a.textContent = dir === 'prev' ? '← Previous' : 'Next →';
-    }
+    a.dataset.nav = 'question';
+    a.dataset.qid = q.id;
+    a.setAttribute('aria-disabled', 'false');
+    a.textContent = (dir === 'prev' ? '← Previous: ' : 'Next: ') + q.shortTitle +
+      (dir === 'next' ? ' →' : '');
+  }
+
+  // Route a Prev/Next slot to a VIEW (overview/summary) rather than a question,
+  // so the ends of the list flow somewhere useful instead of disabling.
+  function setNavToView(a, view, label) {
+    a.dataset.nav = view;
+    a.removeAttribute('data-qid');
+    a.setAttribute('aria-disabled', 'false');
+    a.textContent = label;
   }
 
   /* ===========================================================================
@@ -468,7 +487,7 @@
   }
 
   /* ===========================================================================
-     9. PROGRESS  (header + overview, §12)
+     9. PROGRESS  (header counters + clickable progress bar, §7/§12)
      ======================================================================== */
 
   function updateProgress() {
@@ -477,6 +496,46 @@
     qsa('[data-field="progress-short"]').forEach(function (e) { e.textContent = '(' + decided + '/' + total + ')'; });
     qsa('[data-field="progress-long"]').forEach(function (e) {
       e.textContent = "You've decided " + decided + ' of ' + total + ' questions.';
+    });
+  }
+
+  // One <a> segment per question, colored by decision status, linking straight
+  // to that question. `activeId` marks the current one. Rebuilt from data, so it
+  // scales to any question count automatically.
+  function renderProgressBar(container, activeId) {
+    if (!container) return;
+    container.textContent = '';
+    questions.forEach(function (q, i) {
+      var choice = ballot[q.id].choice;
+      var seg = el('a');
+      seg.className = 'progress-seg ' + statusClass(choice);
+      seg.href = '#';
+      seg.dataset.nav = 'question';
+      seg.dataset.qid = q.id;
+
+      var numbered = meta.ballotOrderCertified && q.ballotNumber != null;
+      seg.appendChild(el('span', String(numbered ? q.ballotNumber : (i + 1))));
+
+      // Status conveyed in words for AT — never color alone (§12).
+      var label = (numbered ? 'Question ' + q.ballotNumber + ': ' : '') +
+        q.shortTitle + ' — ' + choiceWord(choice);
+      seg.setAttribute('aria-label', label);
+
+      if (q.id === activeId) {
+        seg.classList.add('is-active');
+        seg.setAttribute('aria-current', 'true');
+      }
+      container.appendChild(seg);
+    });
+  }
+
+  // Re-render every VISIBLE progress bar after a choice changes without a full
+  // view switch (e.g. tapping Yes/No on the question view).
+  function refreshProgressBars() {
+    qsa('[data-field="progress-bar"]').forEach(function (c) {
+      var view = c.closest('[data-view]');
+      if (view && view.hidden) return;
+      renderProgressBar(c, currentView === 'question' ? currentQuestionId : null);
     });
   }
 
@@ -603,7 +662,8 @@
   // QR is generated ENTIRELY client-side from the vendored library (§9.4) — never
   // an external image API. We render large (512px) so the print stylesheet can
   // scale it down to a crisp 3cm; CSS keeps it inside its box on screen.
-  // Adapter targets the common davidshimjs `QRCode` global; degrades to a link.
+  // Adapter targets the common davidshimjs `QRCode` global; degrades to a link
+  // (the current POC behavior while qrcode.min.js is a placeholder).
   function renderQR(container, text) {
     container.textContent = '';
     if (typeof window.QRCode === 'function') {
@@ -694,11 +754,13 @@
     }
   }
 
-  function handleNav(el) {
-    var view = el.dataset.nav;
+  function handleNav(elm) {
+    var view = elm.dataset.nav;
     if (!view) return;
-    if (view === 'overview' || view === 'summary') reviewMode = false;
-    navigate(view, el.dataset.qid);
+    // A jump that isn't sequential Prev/Next (i.e. not inside .qnav) is a
+    // deliberate move, so drop the "review undecideds" navigation filter.
+    if (!elm.closest('.qnav')) reviewMode = false;
+    navigate(view, elm.dataset.qid);
   }
 
   function handleAction(action) {
@@ -720,15 +782,16 @@
     navigate('question', first.id);
   }
 
-  function handleChoice(el) {
+  function handleChoice(btn) {
     var id = currentQuestionId;
     if (!id) return;
-    var choice = el.dataset.choice;
+    var choice = btn.dataset.choice;
     // Clicking the active choice again clears it back to "no choice".
     ballot[id].choice = (ballot[id].choice === choice) ? null : choice;
     renderChoiceButtons(id);
-    syncHashState();   // mirror choices into the URL immediately (§6)
+    syncHashState();        // mirror choices into the URL immediately (§6)
     updateProgress();
+    refreshProgressBars();  // keep the on-screen progress bar in sync live
   }
 
   /* ===========================================================================
@@ -737,6 +800,21 @@
 
   function getQuestion(id) { return questions.find(function (q) { return q.id === id; }); }
   function isDecided(c) { return c === 'yes' || c === 'no'; }
+
+  // Identity-color slot for a question: an explicit `accent` in JSON wins,
+  // otherwise cycle the palette by position. Never tied to the field size.
+  function accentFor(q, i) {
+    if (q && q.accent != null) return q.accent;
+    var idx = (typeof i === 'number') ? i : questions.indexOf(q);
+    return (idx % ACCENT_COUNT) + 1; // 1..ACCENT_COUNT
+  }
+
+  // Decision status → CSS hook for the progress bar segments.
+  function statusClass(choice) {
+    if (choice === 'yes' || choice === 'no') return 'is-decided';
+    if (choice === 'undecided') return 'is-undecided';
+    return 'is-unviewed';
+  }
 
   function choiceWord(c) {
     if (c === 'yes') return 'YES';

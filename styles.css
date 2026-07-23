@@ -6,13 +6,13 @@
      2. Base / reset
      3. Accessibility utilities
      4. Layout: header / main / footer
-     5. Components: buttons, chips, banners, callouts
+     5. Components: buttons, chips, banners, callouts, progress bar
      6. Views: overview / question / summary (ballot card)
      7. Motion & responsive
 
    Design rules baked in:
      - Everything references tokens; no raw colors/sizes below :root (§13).
-     - Choice state never relies on color ALONE — text/ARIA carries meaning,
+     - Choice/status meaning never relies on color ALONE — text/ARIA carries it,
        color is redundant reinforcement (§12).
      - Mobile-first; the reading column is capped for legibility.
    ========================================================================== */
@@ -48,12 +48,28 @@
   --color-warn-bg:     #fdecea;
   --color-warn-ink:    #8f2a1f;
 
+  /* --- Per-question identity palette (modern flat-UI hues) ---
+     One hue per question, cycled by index in app.js (or overridden per question
+     via an `accent` field in questions.json). These are used at FULL strength
+     only for thin edges (the overview stripe); the question-view eyebrow banner
+     derives a pale tint + a deep-ink text from the same hue via color-mix (see
+     §6b), which is what keeps text readable on a pastel — so the hues here are
+     free to be vivid rather than pre-darkened. Retune freely in the theme pass. */
+  --q-accent-1: #3498db;  /* blue    */
+  --q-accent-2: #1abc9c;  /* teal    */
+  --q-accent-3: #9b59b6;  /* purple  */
+  --q-accent-4: #e74c3c;  /* red     */
+  --q-accent-5: #e67e22;  /* orange  */
+  --q-accent-6: #27ae60;  /* green   */
+  --q-accent-7: #e84393;  /* pink    */
+  --q-accent-8: #f39c12;  /* amber   */
+  --q-accent-9: #34495e;  /* slate   */
+  --q-color:    var(--color-accent-ink);   /* fallback if no [data-accent] set */
+
   /* --- Typography ---
      System fonts only: no @font-face, no CDN, no self-hosting. This keeps the
      strict CSP intact (constraint #3) and adds zero network requests.
      - Display: a system SERIF stack for a news-journalism headline feel.
-       Georgia ships on Apple/Windows; Android/Linux fall back through
-       Noto/Liberation Serif to the generic `serif`.
      - Body: the native UI sans stack for clean, familiar on-screen reading.
      To change type later, edit ONLY these two tokens. */
   --font-display: Georgia, "Times New Roman", "Noto Serif", "Liberation Serif", serif;
@@ -76,6 +92,19 @@
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06),
                  0 4px 16px rgba(16, 24, 40, 0.06);
 }
+
+/* Resolve the identity color from the [data-accent] hook app.js sets on the
+   overview item / question section. Kept generic so --q-color cascades to
+   whatever children need it (eyebrow banner, stripe). */
+[data-accent="1"] { --q-color: var(--q-accent-1); }
+[data-accent="2"] { --q-color: var(--q-accent-2); }
+[data-accent="3"] { --q-color: var(--q-accent-3); }
+[data-accent="4"] { --q-color: var(--q-accent-4); }
+[data-accent="5"] { --q-color: var(--q-accent-5); }
+[data-accent="6"] { --q-color: var(--q-accent-6); }
+[data-accent="7"] { --q-color: var(--q-accent-7); }
+[data-accent="8"] { --q-color: var(--q-accent-8); }
+[data-accent="9"] { --q-color: var(--q-accent-9); }
 
 /* =============================================================================
    2. BASE / RESET
@@ -210,7 +239,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 
 /* =============================================================================
-   5. COMPONENTS — buttons, chips, banners, callouts
+   5. COMPONENTS — buttons, chips, banners, callouts, progress bar
    ========================================================================== */
 
 /* --- Buttons (shared by <button> and .btn anchors) --- */
@@ -237,7 +266,9 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 .btn--primary:hover { background: var(--color-accent-ink); border-color: var(--color-accent-ink); }
 
-/* Disabled links (Prev/Next at the ends): app.js sets aria-disabled="true". */
+/* Disabled links (Prev/Next when a slot has no target): app.js sets
+   aria-disabled="true". Note: with the current nav design the ends route to
+   Overview/Summary instead, so this state is now rarely hit. */
 .btn[aria-disabled="true"],
 .is-disabled {
   opacity: 0.45;
@@ -285,6 +316,42 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 .callout--inversion h2 { margin-top: 0; color: inherit; }
 
+/* --- Clickable progress bar (overview + question views, §7) ---
+   One segment per question. Status is shown by the bottom border's COLOR and
+   STYLE (dotted when unviewed), and each segment's aria-label states the choice
+   in words — so meaning never rests on color alone (§12). */
+.progress-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-4) 0 var(--space-5);
+}
+.progress-seg {
+  flex: 1 1 2rem;
+  min-width: 2rem;
+  min-height: 2.25rem;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-bottom: 4px solid var(--color-border);   /* status edge */
+  border-radius: var(--radius-sm);
+  transition: box-shadow 120ms ease;
+}
+.progress-seg.is-decided   { border-bottom-color: var(--color-choice-yes); }
+.progress-seg.is-undecided { border-bottom-color: var(--color-choice-undecided); }
+.progress-seg.is-unviewed  { border-bottom-color: var(--color-border); border-bottom-style: dotted; }
+
+/* Hover/focus/active use a box-shadow ring so they never mask the status edge. */
+.progress-seg:hover,
+.progress-seg:focus-visible { box-shadow: 0 0 0 2px var(--color-accent-weak); }
+.progress-seg.is-active     { box-shadow: 0 0 0 2px var(--color-accent); }
+
 /* =============================================================================
    6. VIEWS
    ========================================================================== */
@@ -308,6 +375,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-left: 6px solid var(--q-color);   /* per-question identity stripe */
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-2);
 }
@@ -346,6 +414,28 @@ img, svg, canvas { max-width: 100%; height: auto; }
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
   margin-bottom: var(--space-1);
+}
+
+/* Per-question color banner: in the question view the eyebrow becomes a filled
+   "category" pill, colored from the question's identity hue. It's a SOFT tint
+   (pale background) with DEEP-ink text of the same hue — the modern badge look,
+   and readable (min ~5.6:1 across the palette) unlike white-on-pastel. The two
+   plain declarations are fallbacks for engines without color-mix(); the
+   color-mix line then overrides where supported. */
+.view--question .eyebrow {
+  display: inline-block;
+  margin-bottom: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+
+  color: var(--color-accent-ink);                              /* fallback */
+  color: color-mix(in srgb, var(--q-color) 55%, black);        /* deep-ink text */
+
+  background: var(--color-accent-weak);                        /* fallback */
+  background: color-mix(in srgb, var(--q-color) 14%, #fff);    /* pale tint */
+
+  border: 1px solid var(--color-border);                       /* fallback */
+  border: 1px solid color-mix(in srgb, var(--q-color) 35%, #fff);
 }
 
 /* A YES/NO means block */

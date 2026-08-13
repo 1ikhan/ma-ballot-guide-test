@@ -1,4 +1,17 @@
 {
+  "_docs": {
+    "purpose": "Single source of truth for the guide. The app derives the question count, order, numbering, colors, and every string from this file; nothing in the code assumes a particular number of questions.",
+    "editingRules": [
+      "ballotOrderCertified: leave false until the Secretary of the Commonwealth certifies the order. While false, no question numbers are shown anywhere (no placeholders), and a notice banner appears on the overview.",
+      "draft: true shows the draft banner and turns on extra content linting in the browser console (missing shortTitle/yesMeans/noMeans/summary, missing ballotNumber while the order is certified). Set to false to publish.",
+      "fragmentSchemaVersion: BUMP THIS whenever the question list changes in count or order. The URL resume fragment (#s=...) encodes choices POSITIONALLY, so adding, removing, or reordering a question makes every previously shared link and printed QR mean the wrong thing. Bumping the version invalidates them explicitly instead of silently. Saved-on-device state is keyed by id and is unaffected.",
+      "id: stable, URL-safe slug. It is the storage key for a voter's saved answer, so DO NOT rename an id after publish — renaming discards that question's saved choice and note. Ids must be unique; duplicates are dropped with a console warning.",
+      "inverted: true for questions where a yes vote does the counterintuitive thing (e.g. a veto referendum). It triggers the 'Read this one carefully' callout and a compressed reminder on the ballot card. Optional companion field inversionShort supplies that short reminder text; otherwise it is derived from yesMeans.",
+      "accent: optional integer 1-9 to pin a question's identity color. Omit to cycle the palette by position.",
+      "fullGuide blocks: type is one of h2, h3, p, ul, ol, table. Unknown types are ignored, so new block types can be added to the renderer before content uses them. All text is inserted as plain text - HTML in strings will display as literal characters, not markup.",
+      "fiscal: null when there is no fiscal note; the line is hidden rather than showing an empty box."
+    ]
+  },
   "meta": {
     "electionDate": "2026-11-03",
     "contentRevised": "2026-07-16",

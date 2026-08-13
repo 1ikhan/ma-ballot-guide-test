@@ -1,24 +1,24 @@
 /* =============================================================================
    styles.css — screen styles for the MA 2026 Ballot Question Guide
    -----------------------------------------------------------------------------
+   FILENAME MATTERS: index.html links "styles.css". GitHub Pages serves files
+   case- and name-exact, so a repo file named style.css ships an unstyled site.
    Structure:
-     1. Token layer (:root)        ← the ONLY block the theme pass edits (§12/§13)
+     1. Token layer (:root)        ← the ONLY block the theme pass edits
      2. Base / reset
      3. Accessibility utilities
      4. Layout: header / main / footer
      5. Components: buttons, chips, banners, callouts, progress bar
      6. Views: overview / question / summary (ballot card)
      7. Motion & responsive
-
    Design rules baked in:
-     - Everything references tokens; no raw colors/sizes below :root (§13).
+     - Everything references tokens; no raw colors/sizes below :root.
      - Choice/status meaning never relies on color ALONE — text/ARIA carries it,
-       color is redundant reinforcement (§12).
+       color is redundant reinforcement.
      - Mobile-first; the reading column is capped for legibility.
    ========================================================================== */
-
 /* =============================================================================
-   1. TOKEN LAYER — the theming seam (§13)
+   1. TOKEN LAYER — the theming seam
    Edit ONLY this block during the theme pass. If a visual decision can't be
    expressed as a token here, it's out of scope for the backbone.
    ========================================================================== */
@@ -29,32 +29,31 @@
   --color-border:      #e2e6eb;   /* hairlines, dividers */
   --color-text:        #1a1d21;   /* body text (AA+ on bg/surface) */
   --color-text-muted:  #5b6570;   /* eyebrows, hints, secondary text */
-
   /* --- Color: single accent (focus + primary action) --- */
   --color-accent:      #3E8EDE;   /* brand accent (dev note) */
   --color-accent-ink:  #1f5fa6;   /* darker accent for text-on-white AA */
   --color-accent-weak: #eaf2fc;   /* tinted fill for subtle accent surfaces */
-
   /* --- Color: choice semantics ---
      Chosen to (a) meet AA as text on white and (b) survive grayscale print:
      yes=green, no=red, undecided=amber — but labels always accompany them. */
   --color-choice-yes:        #1e7a46;
   --color-choice-no:         #c0392b;
   --color-choice-undecided:  #8a6d00;
-
   /* --- Feedback / notice tints --- */
   --color-notice-bg:   #fff7e6;
   --color-notice-ink:  #7a5b00;
   --color-warn-bg:     #fdecea;
   --color-warn-ink:    #8f2a1f;
-
   /* --- Per-question identity palette (modern flat-UI hues) ---
      One hue per question, cycled by index in app.js (or overridden per question
      via an `accent` field in questions.json). These are used at FULL strength
      only for thin edges (the overview stripe); the question-view eyebrow banner
      derives a pale tint + a deep-ink text from the same hue via color-mix (see
      §6b), which is what keeps text readable on a pastel — so the hues here are
-     free to be vivid rather than pre-darkened. Retune freely in the theme pass. */
+     free to be vivid rather than pre-darkened. Retune freely in the theme pass.
+     ⚠ The NUMBER of --q-accent-* tokens here must equal ACCENT_COUNT in app.js
+     (and each needs a matching [data-accent="n"] rule below). Add one without
+     the other and colors silently repeat, or the hook matches nothing. */
   --q-accent-1: #3498db;  /* blue    */
   --q-accent-2: #1abc9c;  /* teal    */
   --q-accent-3: #9b59b6;  /* purple  */
@@ -65,25 +64,22 @@
   --q-accent-8: #f39c12;  /* amber   */
   --q-accent-9: #34495e;  /* slate   */
   --q-color:    var(--color-accent-ink);   /* fallback if no [data-accent] set */
-
   /* --- Typography ---
      System fonts only: no @font-face, no CDN, no self-hosting. This keeps the
-     strict CSP intact (constraint #3) and adds zero network requests.
+     strict CSP intact and adds zero network requests.
      - Display: a system SERIF stack for a news-journalism headline feel.
      - Body: the native UI sans stack for clean, familiar on-screen reading.
      To change type later, edit ONLY these two tokens. */
   --font-display: Georgia, "Times New Roman", "Noto Serif", "Liberation Serif", serif;
   --font-body:    system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono:    ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-
-  /* --- Spacing scale (§13) --- */
+  /* --- Spacing scale --- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
   --space-5: 1.5rem;
   --space-6: 2.5rem;
-
   /* --- Shape & layout --- */
   --radius:      10px;
   --radius-sm:   6px;
@@ -92,7 +88,6 @@
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06),
                  0 4px 16px rgba(16, 24, 40, 0.06);
 }
-
 /* Resolve the identity color from the [data-accent] hook app.js sets on the
    overview item / question section. Kept generic so --q-color cascades to
    whatever children need it (eyebrow banner, stripe). */
@@ -105,16 +100,13 @@
 [data-accent="7"] { --q-color: var(--q-accent-7); }
 [data-accent="8"] { --q-color: var(--q-accent-8); }
 [data-accent="9"] { --q-color: var(--q-accent-9); }
-
 /* =============================================================================
    2. BASE / RESET
    ========================================================================== */
 *,
 *::before,
 *::after { box-sizing: border-box; }
-
 html { -webkit-text-size-adjust: 100%; }
-
 body {
   margin: 0;
   background: var(--color-bg);
@@ -123,38 +115,30 @@ body {
   font-size: 1.0625rem;          /* 17px base — comfortable reading */
   line-height: 1.6;
 }
-
-/* app.js toggles the [hidden] attribute for view switching; make sure it wins
+/* app.js toggles the [hidden] attribute for view switching and for every
+   conditional region (banners, QR block, print-only lines); make sure it wins
    over any display value a component sets. */
 [hidden] { display: none !important; }
-
 h1, h2, h3 {
   font-family: var(--font-display);
   line-height: 1.2;
   color: var(--color-text);
 }
-
 h1 { font-size: 1.75rem; margin: 0 0 var(--space-4); }
 h2 { font-size: 1.3rem;  margin: var(--space-5) 0 var(--space-3); }
 h3 { font-size: 1.1rem;  margin: var(--space-4) 0 var(--space-2); }
-
 p { margin: 0 0 var(--space-4); }
-
 a { color: var(--color-accent-ink); }
-
 img, svg, canvas { max-width: 100%; height: auto; }
-
-/* Headings that receive programmatic focus (§12) shouldn't show a persistent
-   outline on click, only on keyboard focus. */
+/* Headings that receive programmatic focus shouldn't show a persistent outline
+   on click, only on keyboard focus. */
 :focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-sm); }
 :focus:not(:focus-visible) { outline: none; }
 [tabindex="-1"]:focus { outline: none; }   /* view <h1> focus target: no ring */
-
 /* =============================================================================
    3. ACCESSIBILITY UTILITIES
    ========================================================================== */
-
-/* Skip link: off-screen until focused (§12). */
+/* Skip link: off-screen until focused. */
 .skip-link {
   position: absolute;
   left: var(--space-3);
@@ -168,8 +152,8 @@ img, svg, canvas { max-width: 100%; height: auto; }
   transition: top 120ms ease;
 }
 .skip-link:focus { top: var(--space-3); }
-
-/* Screen-reader-only helper for any visually hidden labels app.js may add. */
+/* Screen-reader-only helper; also used for the tier-2 clipboard textarea, so
+   that path needs no inline styles. */
 .visually-hidden {
   position: absolute !important;
   width: 1px; height: 1px;
@@ -177,7 +161,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   clip: rect(0 0 0 0); clip-path: inset(50%);
   overflow: hidden; white-space: nowrap;
 }
-
 /* =============================================================================
    4. LAYOUT — header / main / footer
    ========================================================================== */
@@ -194,7 +177,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
-
 .site-header__brand {
   display: flex;
   flex-direction: column;
@@ -203,7 +185,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 .site-header__title  { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
 .site-header__org    { color: var(--color-text-muted); font-size: 0.8rem; }
-
 .site-header__summary-link {
   display: inline-block;
   padding: var(--space-2) var(--space-3);
@@ -215,20 +196,17 @@ img, svg, canvas { max-width: 100%; height: auto; }
   white-space: nowrap;
 }
 .site-header__progress { font-variant-numeric: tabular-nums; }
-
 .app-status {
   max-width: var(--max-width);
   margin: var(--space-3) auto 0;
   padding: 0 var(--space-4);
   color: var(--color-text-muted);
 }
-
 .main {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) var(--space-6);
 }
-
 .site-footer {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -237,11 +215,9 @@ img, svg, canvas { max-width: 100%; height: auto; }
   font-size: 0.85rem;
   border-top: 1px solid var(--color-border);
 }
-
 /* =============================================================================
    5. COMPONENTS — buttons, chips, banners, callouts, progress bar
    ========================================================================== */
-
 /* --- Buttons (shared by <button> and .btn anchors) --- */
 .btn {
   display: inline-block;
@@ -258,23 +234,25 @@ img, svg, canvas { max-width: 100%; height: auto; }
   transition: background 120ms ease, border-color 120ms ease;
 }
 .btn:hover { border-color: var(--color-accent); }
-
 .btn--primary {
   color: #fff;
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
 .btn--primary:hover { background: var(--color-accent-ink); border-color: var(--color-accent-ink); }
-
-/* Disabled links (Prev/Next when a slot has no target): app.js sets
-   aria-disabled="true". Note: with the current nav design the ends route to
-   Overview/Summary instead, so this state is now rarely hit. */
-.btn[aria-disabled="true"],
-.is-disabled {
-  opacity: 0.45;
-  pointer-events: none;
+/* Quiet button: destructive-but-legitimate actions (erasing saved answers) that
+   should be findable, not prominent. */
+.btn--quiet {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  border-color: var(--color-border);
 }
-
+.btn--quiet:hover { color: var(--color-warn-ink); border-color: var(--color-warn-ink); }
+/* (No disabled-button styles: Prev/Next always route somewhere — the ends go to
+   Overview and Summary — so no nav control is ever inert.) */
 /* --- Status chips (overview list) ---
    Base style; app.js adds a modifier for the state so color reinforces the
    text label ("Decided ✓" / "Undecided ?" / "Not viewed"). */
@@ -291,8 +269,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
 .chip--decided   { color: var(--color-choice-yes); border-color: var(--color-choice-yes); }
 .chip--undecided { color: var(--color-choice-undecided); border-color: var(--color-choice-undecided); }
 .chip--unviewed  { color: var(--color-text-muted); }
-
-/* --- Banners (draft / order-uncertified notices) --- */
+/* --- Banners (draft / order-uncertified / webview notices) --- */
 .banner {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
@@ -302,8 +279,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 .banner--draft  { background: var(--color-accent-weak); color: var(--color-accent-ink); border-color: var(--color-accent); }
 .banner--notice { background: var(--color-notice-bg); color: var(--color-notice-ink); border-color: var(--color-notice-ink); }
-
-/* --- Callout: the yes/no inversion notice (§8.3) — highest-value element --- */
+/* --- Callout: the yes/no inversion notice — highest-value element --- */
 .callout {
   padding: var(--space-4);
   border-radius: var(--radius);
@@ -315,11 +291,10 @@ img, svg, canvas { max-width: 100%; height: auto; }
   border: 2px solid var(--color-warn-ink);
 }
 .callout--inversion h2 { margin-top: 0; color: inherit; }
-
-/* --- Clickable progress bar (overview + question views, §7) ---
+/* --- Clickable progress bar (overview + question views) ---
    One segment per question. Status is shown by the bottom border's COLOR and
    STYLE (dotted when unviewed), and each segment's aria-label states the choice
-   in words — so meaning never rests on color alone (§12). */
+   in words — so meaning never rests on color alone. */
 .progress-bar {
   display: flex;
   flex-wrap: wrap;
@@ -346,22 +321,18 @@ img, svg, canvas { max-width: 100%; height: auto; }
 .progress-seg.is-decided   { border-bottom-color: var(--color-choice-yes); }
 .progress-seg.is-undecided { border-bottom-color: var(--color-choice-undecided); }
 .progress-seg.is-unviewed  { border-bottom-color: var(--color-border); border-bottom-style: dotted; }
-
 /* Hover/focus/active use a box-shadow ring so they never mask the status edge. */
 .progress-seg:hover,
 .progress-seg:focus-visible { box-shadow: 0 0 0 2px var(--color-accent-weak); }
 .progress-seg.is-active     { box-shadow: 0 0 0 2px var(--color-accent); }
-
 /* =============================================================================
    6. VIEWS
    ========================================================================== */
-
 /* --- 6a. Overview --- */
 .progress {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-
 .overview-list {
   list-style: none;
   margin: var(--space-5) 0;
@@ -394,7 +365,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   color: var(--color-text-muted);
 }
 .overview-item__title { font-weight: 600; }
-
 .privacy {
   margin-top: var(--space-6);
   padding: var(--space-4);
@@ -404,10 +374,9 @@ img, svg, canvas { max-width: 100%; height: auto; }
   font-size: 0.95rem;
 }
 .privacy h2 { margin-top: 0; }
-
+.privacy p:last-child { margin-bottom: 0; }
 /* --- 6b. Question view --- */
 .back a { text-decoration: none; font-weight: 600; }
-
 .eyebrow {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -415,7 +384,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   color: var(--color-text-muted);
   margin-bottom: var(--space-1);
 }
-
 /* Per-question color banner: in the question view the eyebrow becomes a filled
    "category" pill, colored from the question's identity hue. It's a SOFT tint
    (pale background) with DEEP-ink text of the same hue — the modern badge look,
@@ -427,17 +395,13 @@ img, svg, canvas { max-width: 100%; height: auto; }
   margin-bottom: var(--space-3);
   padding: var(--space-1) var(--space-3);
   border-radius: 999px;
-
   color: var(--color-accent-ink);                              /* fallback */
   color: color-mix(in srgb, var(--q-color) 55%, black);        /* deep-ink text */
-
   background: var(--color-accent-weak);                        /* fallback */
   background: color-mix(in srgb, var(--q-color) 14%, #fff);    /* pale tint */
-
   border: 1px solid var(--color-border);                       /* fallback */
   border: 1px solid color-mix(in srgb, var(--q-color) 35%, #fff);
 }
-
 /* A YES/NO means block */
 .means {
   margin: 0 0 var(--space-5);
@@ -450,17 +414,14 @@ img, svg, canvas { max-width: 100%; height: auto; }
 .means__row:last-child { margin-bottom: 0; }
 .means dt { color: var(--color-text-muted); font-size: 0.9rem; }
 .means dd { margin: 0; }
-
 .summary { font-size: 1.05rem; }
 .summary p:last-child { margin-bottom: 0; }
-
 .fiscal {
   padding: var(--space-3) var(--space-4);
   background: var(--color-accent-weak);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
 }
-
 /* Full guide expander */
 .full-guide {
   border: 1px solid var(--color-border);
@@ -489,7 +450,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   vertical-align: top;
 }
 .full-guide__body th { background: var(--color-bg); }
-
 /* Supports / opposes */
 .stances {
   display: grid;
@@ -499,14 +459,12 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 .stances h2 { font-size: 1rem; margin-top: 0; }
 .stances ul { margin: 0; padding-left: 1.1rem; }
-
 /* Dig-deeper collapsibles */
 .deeper__item {
   border-top: 1px solid var(--color-border);
   padding: var(--space-2) 0;
 }
 .deeper__item > summary { cursor: pointer; font-weight: 600; }
-
 /* Decide (choice + note) */
 .decide {
   margin: var(--space-6) 0 var(--space-5);
@@ -529,9 +487,8 @@ img, svg, canvas { max-width: 100%; height: auto; }
   font-weight: 600;
   color: var(--color-text-muted);
 }
-
 /* Choice toggle buttons — color reinforces the aria-pressed state,
-   but the label text is the source of truth (§12). */
+   but the label text is the source of truth. */
 .choice-btn {
   flex: 1 1 auto;
   min-width: 5rem;
@@ -545,7 +502,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
 }
 .choice-btn:hover { border-color: var(--color-text-muted); }
-
 .choice-btn[data-choice="yes"][aria-pressed="true"] {
   color: #fff; background: var(--color-choice-yes); border-color: var(--color-choice-yes);
 }
@@ -555,7 +511,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
 .choice-btn[data-choice="undecided"][aria-pressed="true"] {
   color: #fff; background: var(--color-choice-undecided); border-color: var(--color-choice-undecided);
 }
-
 .decide__note label { display: block; font-weight: 600; margin-bottom: var(--space-1); }
 .decide__note textarea {
   width: 100%;
@@ -568,7 +523,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   resize: vertical;
 }
 .hint { color: var(--color-text-muted); font-size: 0.85rem; margin: var(--space-1) 0 0; }
-
 /* Prev/Next */
 .qnav {
   display: flex;
@@ -576,7 +530,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   gap: var(--space-3);
   margin-top: var(--space-5);
 }
-
 /* --- 6c. Summary / ballot card --- */
 .ballot-card {
   background: var(--color-surface);
@@ -589,7 +542,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
 .ballot-card__head h1 { margin: 0; }
 .ballot-card__date { color: var(--color-text-muted); margin: var(--space-1) 0 0; }
 .ballot-card__sub  { margin: 0; }
-
 .ballot-card__rows { list-style: none; margin: var(--space-4) 0; padding: 0; }
 .ballot-row {
   display: grid;
@@ -611,7 +563,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
 .ballot-row__choice.is-yes       { color: var(--color-choice-yes); }
 .ballot-row__choice.is-no        { color: var(--color-choice-no); }
 .ballot-row__choice.is-undecided { color: var(--color-choice-undecided); }
-
 .ballot-row__note {
   grid-column: 2 / -1;
   margin: 0;
@@ -626,7 +577,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
   font-weight: 600;
   color: var(--color-warn-ink);
 }
-
 .ballot-card__status { margin: var(--space-4) 0; }
 .ballot-card__actions {
   display: flex;
@@ -634,7 +584,8 @@ img, svg, canvas { max-width: 100%; height: auto; }
   gap: var(--space-3);
   margin: var(--space-4) 0;
 }
-
+/* QR block. app.js keeps this [hidden] while QR generation is paused, so the
+   rules below only take effect once a real generator is vendored in. */
 .ballot-card__qr {
   display: flex;
   align-items: center;
@@ -654,7 +605,6 @@ img, svg, canvas { max-width: 100%; height: auto; }
 }
 .qr canvas, .qr svg, .qr img { display: block; }
 .qr__label { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
-
 .ballot-card__foot {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
@@ -663,7 +613,16 @@ img, svg, canvas { max-width: 100%; height: auto; }
   color: var(--color-text-muted);
 }
 .ballot-card__foot p { margin: 0 0 var(--space-1); }
-
+/* Print-only resume URL (shown by app.js only in fragment-fallback mode). On
+   screen it's redundant with the address bar, so it never appears here; the
+   print stylesheet reveals it. */
+.resume-print { display: none; }
+/* Erase control, below the card: findable, deliberately not prominent. */
+.ballot-card__manage {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--space-4) 0 var(--space-2);
+}
 .noscript-msg {
   max-width: var(--max-width);
   margin: var(--space-5) auto;
@@ -672,8 +631,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
   color: var(--color-warn-ink);
   border-radius: var(--radius-sm);
 }
-
-/* Tier-3 clipboard fallback (§11): visible, pre-selected textarea. */
+/* Tier-3 clipboard fallback: visible, pre-selected textarea. */
 .copy-fallback {
   margin: var(--space-3) 0;
   padding: var(--space-4);
@@ -695,28 +653,12 @@ img, svg, canvas { max-width: 100%; height: auto; }
   border-radius: var(--radius-sm);
   resize: vertical;
 }
-
-/* QR degradation link (§9.4): shown by renderQR() while the generator is pinned. */
-.qr__fallback-link {
-  display: inline-block;
-  padding: var(--space-2) var(--space-3);
-  font-weight: 600;
-  text-decoration: none;
-  color: var(--color-accent-ink);
-  background: var(--color-accent-weak);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  word-break: break-all;           /* long resume URL wraps inside the QR box */
-}
-
 /* Muted empty-state list item (e.g. "No organized opposition."). */
 .is-muted { color: var(--color-text-muted); font-style: italic; list-style: none; }
-
 /* =============================================================================
    7. MOTION & RESPONSIVE
    ========================================================================== */
-
-/* Respect reduced-motion (§12): kill transitions/animations. */
+/* Respect reduced-motion: kill transitions/animations. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
@@ -725,14 +667,13 @@ img, svg, canvas { max-width: 100%; height: auto; }
     scroll-behavior: auto !important;
   }
 }
-
 /* Narrow phones: stack the two-column stances and give choice buttons room. */
 @media (max-width: 30rem) {
   .stances { grid-template-columns: 1fr; }
   .ballot-card__qr { flex-direction: column; align-items: flex-start; }
+  .ballot-card__manage { justify-content: stretch; }
   h1 { font-size: 1.5rem; }
 }
-
 /* Larger screens: a touch more headline scale. */
 @media (min-width: 48rem) {
   h1 { font-size: 2rem; }
